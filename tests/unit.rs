@@ -144,7 +144,6 @@ with some more text
 }
 
 #[test]
-#[ignore = "behavior not implemented yet"]
 fn test_styles_with_spaces() {
     let md = parse_html(r#"It read:<s> Nobody will ever love you</s>"#);
     assert_eq!(md, r#"It read: #strike[Nobody will ever love you]"#);

@@ -60,14 +60,28 @@ fn walk(node: &Handle, ctx: &mut Context) {
                     todo!("{tag_name}")
                 }
                 "sub" => {
+                    let (leading_ws, trailing_ws) = inline_edge_whitespace(node);
+                    if leading_ws {
+                        ctx.output.push(' ');
+                    }
                     ctx.output.push_str("#sub[");
                     walk_descendants(node, ctx, Some(Box::from(tag_name)));
                     ctx.output.push(']');
+                    if trailing_ws {
+                        ctx.output.push(' ');
+                    }
                 }
                 "sup" => {
+                    let (leading_ws, trailing_ws) = inline_edge_whitespace(node);
+                    if leading_ws {
+                        ctx.output.push(' ');
+                    }
                     ctx.output.push_str("#super[");
                     walk_descendants(node, ctx, Some(Box::from(tag_name)));
                     ctx.output.push(']');
+                    if trailing_ws {
+                        ctx.output.push(' ');
+                    }
                 }
                 "div" | "section" | "header" | "footer" => {
                     ctx.output.push_str("\n\n");
@@ -127,28 +141,52 @@ fn walk(node: &Handle, ctx: &mut Context) {
                     ctx.output.push_str("\n\n");
                 }
                 "s" | "del" => {
-                    // TODO: handle spaces
+                    let (leading_ws, trailing_ws) = inline_edge_whitespace(node);
+                    if leading_ws {
+                        ctx.output.push(' ');
+                    }
                     ctx.output.push_str("#strike[");
                     walk_descendants(node, ctx, Some(Box::from(tag_name)));
                     ctx.output.push(']');
+                    if trailing_ws {
+                        ctx.output.push(' ');
+                    }
                 }
                 "b" | "strong" => {
-                    // TODO: handle spaces
+                    let (leading_ws, trailing_ws) = inline_edge_whitespace(node);
+                    if leading_ws {
+                        ctx.output.push(' ');
+                    }
                     ctx.output.push('*');
                     walk_descendants(node, ctx, Some(Box::from(tag_name)));
                     ctx.output.push('*');
+                    if trailing_ws {
+                        ctx.output.push(' ');
+                    }
                 }
                 "i" | "em" => {
-                    // TODO: handle spaces
+                    let (leading_ws, trailing_ws) = inline_edge_whitespace(node);
+                    if leading_ws {
+                        ctx.output.push(' ');
+                    }
                     ctx.output.push('_');
                     walk_descendants(node, ctx, Some(Box::from(tag_name)));
                     ctx.output.push('_');
+                    if trailing_ws {
+                        ctx.output.push(' ');
+                    }
                 }
                 "u" | "ins" => {
-                    // TODO: handle spaces
+                    let (leading_ws, trailing_ws) = inline_edge_whitespace(node);
+                    if leading_ws {
+                        ctx.output.push(' ');
+                    }
                     ctx.output.push_str("#underline[");
                     walk_descendants(node, ctx, Some(Box::from(tag_name)));
                     ctx.output.push(']');
+                    if trailing_ws {
+                        ctx.output.push(' ');
+                    }
                 }
                 "blockquote" => {
                     ctx.output.push_str("\n\n#quote(block: true)[\n");
@@ -263,6 +301,27 @@ fn get_attr_value<'a>(attrs: &'a [Attribute], name: &str) -> Option<&'a str> {
         .iter()
         .find(|attr| attr.name.local.as_ref() == name)
         .map(|attr| attr.value.as_ref())
+}
+
+fn text_content(node: &Handle, output: &mut String) {
+    match &node.data {
+        NodeData::Text { contents } => output.push_str(&contents.borrow()),
+        _ => {
+            for child in node.children.borrow().iter() {
+                text_content(child, output);
+            }
+        }
+    }
+}
+
+fn inline_edge_whitespace(node: &Handle) -> (bool, bool) {
+    let mut text = String::new();
+    text_content(node, &mut text);
+
+    (
+        text.starts_with(char::is_whitespace),
+        text.ends_with(char::is_whitespace),
+    )
 }
 
 fn walk_descendants(node: &Handle, ctx: &mut Context, tag_name: Option<Box<str>>) {
