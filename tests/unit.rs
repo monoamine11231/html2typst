@@ -252,7 +252,6 @@ fn test_nested_not_tight_lists() {
 }
 
 #[test]
-#[ignore = "behavior not implemented yet"]
 fn test_lists_br() {
     let typ = parse_html(r#"<ul><li>A<br/>X<br/>Y</li><li>B</li><li>C</li></ul>"#);
     assert_eq!(

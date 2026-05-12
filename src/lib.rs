@@ -30,6 +30,20 @@ fn cleanup(output: &str) -> String {
     output.trim().to_owned()
 }
 
+fn current_list_depth(ctx: &Context) -> usize {
+    ctx.tag_stack
+        .iter()
+        .filter(|tag| matches!(tag.as_deref(), Some("ol" | "ul" | "menu")))
+        .count()
+}
+
+fn inside_list_item(ctx: &Context) -> bool {
+    ctx.tag_stack
+        .iter()
+        .rev()
+        .any(|tag| matches!(tag.as_deref(), Some("li")))
+}
+
 #[allow(clippy::too_many_lines)]
 fn walk(node: &Handle, ctx: &mut Context) {
     match &node.data {
@@ -213,7 +227,19 @@ fn walk(node: &Handle, ctx: &mut Context) {
                     walk_descendants(node, ctx, Some(Box::from(tag_name)));
                     ctx.output.push_str("\n\n");
                 }
-                "br" => ctx.output.push_str("\\\n"),
+                "br" => {
+                    ctx.output.push_str("\\\n");
+                    if inside_list_item(ctx) {
+                        ctx.output
+                            .write_fmt(format_args!(
+                                "{: <width$}",
+                                "",
+                                width = current_list_depth(ctx) * 2
+                            ))
+                            // SAFETY: we are writing to a String
+                            .unwrap();
+                    }
+                }
                 "a" => {
                     if let Some(href) = get_attr_value(&attrs.borrow(), "href") {
                         ctx.output
