@@ -150,7 +150,6 @@ fn test_styles_with_spaces() {
 }
 
 #[test]
-#[ignore = "behavior not implemented yet"]
 fn test_styles_with_newlines() {
     let md = parse_html(
         r#"
