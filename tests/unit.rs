@@ -179,7 +179,6 @@ _They stab it with their steely knives_\
 }
 
 #[test]
-#[ignore = "behavior not implemented yet"]
 fn test_sub_sup() {
     let typ = parse_html(r#"A<sub>1</sub>B<sup>2</sup>"#);
     assert_eq!(typ, r#"A#sub[1]B#super[2]"#);

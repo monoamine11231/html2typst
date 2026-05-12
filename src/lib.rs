@@ -55,9 +55,19 @@ fn walk(node: &Handle, ctx: &mut Context) {
             let tag_name = name.local.as_ref();
 
             match tag_name {
-                "hr" | "q" | "cite" | "details" | "summary" | "pre" | "code" | "sub" | "sup"
-                | "table" | "iframe" => {
+                "hr" | "q" | "cite" | "details" | "summary" | "pre" | "code" | "table"
+                | "iframe" => {
                     todo!("{tag_name}")
+                }
+                "sub" => {
+                    ctx.output.push_str("#sub[");
+                    walk_descendants(node, ctx, Some(Box::from(tag_name)));
+                    ctx.output.push(']');
+                }
+                "sup" => {
+                    ctx.output.push_str("#super[");
+                    walk_descendants(node, ctx, Some(Box::from(tag_name)));
+                    ctx.output.push(']');
                 }
                 "div" | "section" | "header" | "footer" => {
                     ctx.output.push_str("\n\n");
