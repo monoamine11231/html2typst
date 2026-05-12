@@ -1,6 +1,6 @@
 [package]
 name = "html2typst"
-version = "0.0.1"
+version = "0.0.2"
 edition = "2024"
 authors = ["Adrian J. Delgado <rust@adrianjdelgado.com>"]
 description = "Convert HTML files to Typst syntax"

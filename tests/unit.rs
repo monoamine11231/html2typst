@@ -1,3 +1,5 @@
+#![allow(clippy::needless_raw_string_hashes)]
+
 use html2typst::parse_html;
 
 #[test]
@@ -142,14 +144,14 @@ with some more text
 }
 
 #[test]
-#[ignore]
+#[ignore = "behavior not implemented yet"]
 fn test_styles_with_spaces() {
     let md = parse_html(r#"It read:<s> Nobody will ever love you</s>"#);
-    assert_eq!(md, r#"It read: #strike[Nobody will ever love you]"#)
+    assert_eq!(md, r#"It read: #strike[Nobody will ever love you]"#);
 }
 
 #[test]
-#[ignore]
+#[ignore = "behavior not implemented yet"]
 fn test_styles_with_newlines() {
     let md = parse_html(
         r#"
@@ -173,11 +175,11 @@ They gathered for the feast\
 _They stab it with their steely knives_\
 *But they just can't kill the beast\
 *"#
-    )
+    );
 }
 
 #[test]
-#[ignore]
+#[ignore = "behavior not implemented yet"]
 fn test_sub_sup() {
     let typ = parse_html(r#"A<sub>1</sub>B<sup>2</sup>"#);
     assert_eq!(typ, r#"A#sub[1]B#super[2]"#);
@@ -213,7 +215,7 @@ fn test_lists() {
 }
 
 #[test]
-#[ignore]
+#[ignore = "behavior not implemented yet"]
 fn test_nested_tight_lists() {
     let typ = parse_html(
         r#"<ul><li>A<ol><li>X<ul><li>Deep</li></ul></li><li>Y</li><li>Z</li></ol></li><li>B</li><li>C</li>li</ul>"#,
@@ -231,7 +233,7 @@ fn test_nested_tight_lists() {
 }
 
 #[test]
-#[ignore]
+#[ignore = "behavior not implemented yet"]
 fn test_nested_not_tight_lists() {
     let typ = parse_html(
         r#"<ul><li>A<ol><li><p>X</p><ul><li><p>Deep</p></li></ul></li><li>Y</li><li>Z</li></ol></li><li>B<ul><li><p>No space</p></li></ul></li><li>C</li>li</ul>"#,
@@ -253,7 +255,7 @@ fn test_nested_not_tight_lists() {
 }
 
 #[test]
-#[ignore]
+#[ignore = "behavior not implemented yet"]
 fn test_lists_br() {
     let typ = parse_html(r#"<ul><li>A<br/>X<br/>Y</li><li>B</li><li>C</li></ul>"#);
     assert_eq!(
@@ -267,7 +269,7 @@ fn test_lists_br() {
 }
 
 #[test]
-#[ignore]
+#[ignore = "behavior not implemented yet"]
 fn test_lists_p() {
     let typ =
         parse_html(r#"<ul><li><p>X</p><p>Y</p></li><li>B<ol><li>Z</li></ol></li><li>C</li></ul>"#);
@@ -285,7 +287,7 @@ fn test_lists_p() {
 }
 
 #[test]
-#[ignore]
+#[ignore = "behavior not implemented yet"]
 fn test_table() {
     let typ = parse_html(
         r#"<table>
@@ -320,7 +322,7 @@ fn test_table() {
 }
 
 #[test]
-#[ignore]
+#[ignore = "behavior not implemented yet"]
 fn test_table_more_headers() {
     let typ = parse_html(
         r#"<table>
@@ -357,7 +359,7 @@ fn test_table_more_headers() {
 }
 
 #[test]
-#[ignore]
+#[ignore = "behavior not implemented yet"]
 fn test_table_more_rows() {
     let typ = parse_html(
         r#"<table>
@@ -390,7 +392,7 @@ fn test_table_more_rows() {
 }
 
 #[test]
-#[ignore]
+#[ignore = "behavior not implemented yet"]
 fn test_rich_text() {
     let md = parse_html(
         r##"<p>finding description</p><p>new paragraph</p><p>a paragraph<br>with a linebreak</p><p>some rich text like <strong>bold</strong>, <em>italic</em>, <u>underlined</u>, <s>strike-through</s>, <mark data-color="#ffff25" style="background-color: #ffff25; color: #000000">highlighted</mark>, <strong>a <em>mix</em></strong><em> <u>of</u></em><u> them</u></p><ul><li><p>some</p><ol><li><p>first point</p></li><li><p>second point</p></li></ol></li><li><p>bullets</p><ul><li><p>even inside</p></li></ul></li></ul><p>some code here: <code>1 + 1 == 2</code></p><p>Here is a codeblock:</p><pre><code>1 + 1 == 2</code></pre><p></p>"##,
@@ -398,5 +400,5 @@ fn test_rich_text() {
     assert_eq!(
         md,
         "finding description\n\nnew paragraph\n\na paragraph\\\nwith a linebreak\n\nsome rich text like *bold*, _italic_, #underline[underlined], #strike[strike-through], #highlight[highlighted], *a _mix_*_ #underline[of]_#underline[ them]\n\n- some\n\n  + first point\n\n  + second point\n\n- bullets\n\n  - even inside\n\nsome code here: `1 + 1 == 2`\n\nHere is a codeblock:\n\n```\n1 + 1 == 2\n```"
-    )
+    );
 }

@@ -1,7 +1,7 @@
 use base64::{Engine as _, engine::general_purpose};
 use std::{borrow::Cow, fmt::Write as _};
 
-use html5ever::{Attribute, ParseOpts, data, parse_document, tendril::TendrilSink};
+use html5ever::{Attribute, ParseOpts, parse_document, tendril::TendrilSink};
 use markup5ever_rcdom::{Handle, NodeData, RcDom};
 
 #[derive(Debug, Default)]
@@ -111,7 +111,7 @@ fn walk(node: &Handle, ctx: &mut Context) {
                         == 0
                     {
                         ctx.output.push('\n');
-                    };
+                    }
                     // TODO: extra newline if not inside a list
                     walk_descendants(node, ctx, Some(Box::from(tag_name)));
                     ctx.output.push_str("\n\n");
@@ -185,26 +185,28 @@ fn walk(node: &Handle, ctx: &mut Context) {
                     // TODO: check if the escaping is correct
                     let src = get_attr_value(&attrs, "src").map(|x| {
                         let cleared = x.chars().filter(|c| !c.is_whitespace()).collect::<String>();
-                        if cleared.starts_with("data:") {
-                            let uri_scheme: Vec<&str> = cleared[5..].split(';').collect();
-                            if !uri_scheme[0].starts_with("image/") {
-                                panic!("Image tag `src` in URI scheme isn't image data.");
-                            }
+                        if let Some(stripped) = cleared.strip_prefix("data:") {
+                            let uri_scheme: Vec<&str> = stripped.split(';').collect();
+                            assert!(
+                                uri_scheme[0].starts_with("image/"),
+                                "Image tag `src` in URI scheme isn't image data."
+                            );
 
                             let data_part: Vec<&str> =
-                                uri_scheme.last().unwrap().split(",").collect();
+                                uri_scheme.last().unwrap().split(',').collect();
                             match data_part[0] {
                                 "base64" => {
                                     let data = general_purpose::STANDARD
-                                        .decode(&data_part[1])
+                                        .decode(data_part[1])
                                         .expect("Image tag `src` in URI scheme doesn't contain valid base64");
 
-                                    return format!("bytes(({}))", data
-                                        .iter()
-                                        .map(|b| b.to_string())
-                                        .collect::<Vec<_>>()
-                                        .join(", "));
-
+                                    return format!(
+                                        "bytes(({}))",
+                                        data.iter()
+                                            .map(std::string::ToString::to_string)
+                                            .collect::<Vec<_>>()
+                                            .join(", ")
+                                    );
                                 }
                                 "image/svg+xml" => todo!(),
                                 _ => panic!(
@@ -213,7 +215,7 @@ fn walk(node: &Handle, ctx: &mut Context) {
                                 ),
                             }
                         }
-                        format!("\"{}\"", escape_quotes(&x))
+                        format!("\"{}\"", escape_quotes(x))
                     });
                     let alt = get_attr_value(&attrs, "alt");
 
@@ -231,10 +233,7 @@ fn walk(node: &Handle, ctx: &mut Context) {
                         (Some(src), None) => {
                             // TODO: test the escaping
                             ctx.output
-                                .write_fmt(format_args!(
-                                    r#"#figure(caption: none, image({}))"#,
-                                    &src,
-                                ))
+                                .write_fmt(format_args!(r"#figure(caption: none, image({}))", &src))
                                 // SAFETY: we are writing to a string
                                 .unwrap();
                         }
@@ -246,7 +245,7 @@ fn walk(node: &Handle, ctx: &mut Context) {
                 }
             }
         }
-    };
+    }
 }
 
 fn get_attr_value<'a>(attrs: &'a [Attribute], name: &str) -> Option<&'a str> {
@@ -266,7 +265,7 @@ fn walk_descendants(node: &Handle, ctx: &mut Context, tag_name: Option<Box<str>>
     ctx.tag_stack.pop();
 }
 
-fn escape_quotes(html: &str) -> Cow<str> {
+fn escape_quotes(html: &str) -> Cow<'_, str> {
     if !html.contains('"') {
         return Cow::Borrowed(html);
     }
@@ -289,7 +288,7 @@ fn escape_quotes(html: &str) -> Cow<str> {
     )
 }
 
-fn escape_html(html: &str) -> Cow<str> {
+fn escape_html(html: &str) -> Cow<'_, str> {
     if !html.contains(['*', '_', '<', '>']) && !html.starts_with(['=', '-', '+']) {
         return Cow::Borrowed(html);
     }
