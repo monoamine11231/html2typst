@@ -1,4 +1,4 @@
-use base64::{Engine as _, engine::general_purpose};
+use data_encoding::BASE64;
 use std::{borrow::Cow, fmt::Write as _};
 
 use html5ever::{Attribute, ParseOpts, parse_document, tendril::TendrilSink};
@@ -196,8 +196,8 @@ fn walk(node: &Handle, ctx: &mut Context) {
                                 uri_scheme.last().unwrap().split(',').collect();
                             match data_part[0] {
                                 "base64" => {
-                                    let data = general_purpose::STANDARD
-                                        .decode(data_part[1])
+                                    let data = BASE64
+                                        .decode(data_part[1].as_bytes())
                                         .expect("Image tag `src` in URI scheme doesn't contain valid base64");
 
                                     return format!(
