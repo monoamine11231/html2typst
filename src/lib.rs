@@ -1,6 +1,7 @@
+use base64::{Engine as _, engine::general_purpose};
 use std::{borrow::Cow, fmt::Write as _};
 
-use html5ever::{Attribute, ParseOpts, parse_document, tendril::TendrilSink};
+use html5ever::{Attribute, ParseOpts, data, parse_document, tendril::TendrilSink};
 use markup5ever_rcdom::{Handle, NodeData, RcDom};
 
 #[derive(Debug, Default)]
@@ -182,15 +183,47 @@ fn walk(node: &Handle, ctx: &mut Context) {
                     let attrs = attrs.borrow();
 
                     // TODO: check if the escaping is correct
-                    let src = get_attr_value(&attrs, "src");
+                    let src = get_attr_value(&attrs, "src").map(|x| {
+                        let cleared = x.chars().filter(|c| !c.is_whitespace()).collect::<String>();
+                        if cleared.starts_with("data:") {
+                            let uri_scheme: Vec<&str> = cleared[5..].split(';').collect();
+                            if !uri_scheme[0].starts_with("image/") {
+                                panic!("Image tag `src` in URI scheme isn't image data.");
+                            }
+
+                            let data_part: Vec<&str> =
+                                uri_scheme.last().unwrap().split(",").collect();
+                            match data_part[0] {
+                                "base64" => {
+                                    let data = general_purpose::STANDARD
+                                        .decode(&data_part[1])
+                                        .expect("Image tag `src` in URI scheme doesn't contain valid base64");
+
+                                    return format!("bytes(({}))", data
+                                        .iter()
+                                        .map(|b| b.to_string())
+                                        .collect::<Vec<_>>()
+                                        .join(", "));
+
+                                }
+                                "image/svg+xml" => todo!(),
+                                _ => panic!(
+                                    "Image tag `src` URI scheme encoding of `{}` isn't supported.",
+                                    data_part[0]
+                                ),
+                            }
+                        }
+                        format!("\"{}\"", escape_quotes(&x))
+                    });
                     let alt = get_attr_value(&attrs, "alt");
+
                     match (src, alt) {
                         (Some(src), Some(alt)) => {
                             ctx.output
                                 .write_fmt(format_args!(
-                                    r#"#figure(caption: [{alt}], image(alt: "{}", "{}"))"#,
+                                    r#"#figure(caption: [{alt}], image(alt: "{}", {}))"#,
                                     escape_quotes(alt),
-                                    escape_quotes(src),
+                                    &src
                                 ))
                                 // SAFETY: we are writing to a string
                                 .unwrap();
@@ -199,8 +232,8 @@ fn walk(node: &Handle, ctx: &mut Context) {
                             // TODO: test the escaping
                             ctx.output
                                 .write_fmt(format_args!(
-                                    r#"#figure(caption: none, image("{}"))"#,
-                                    escape_quotes(src),
+                                    r#"#figure(caption: none, image({}))"#,
+                                    &src,
                                 ))
                                 // SAFETY: we are writing to a string
                                 .unwrap();

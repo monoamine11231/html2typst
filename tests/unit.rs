@@ -43,6 +43,15 @@ fn test_image() {
         typ,
         r#"#figure(caption: [qwer], image(alt: "qwer", "asdf"))"#
     );
+
+    let typ2 = parse_html(r#"<img src="data:image/png;base64,AAAA" alt="Black dot NOT PNG" />"#);
+    assert_eq!(
+        typ2,
+        r#"#figure(caption: [Black dot NOT PNG], image(alt: "Black dot NOT PNG", bytes((0, 0, 0))))"#
+    );
+
+    let typ3 = parse_html(r#"<img src="data:image/png;base64,AAAA"/>"#);
+    assert_eq!(typ3, r#"#figure(caption: none, image(bytes((0, 0, 0))))"#);
 }
 
 #[test]
