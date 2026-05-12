@@ -265,7 +265,6 @@ fn test_lists_br() {
 }
 
 #[test]
-#[ignore = "behavior not implemented yet"]
 fn test_lists_p() {
     let typ =
         parse_html(r#"<ul><li><p>X</p><p>Y</p></li><li>B<ol><li>Z</li></ol></li><li>C</li></ul>"#);

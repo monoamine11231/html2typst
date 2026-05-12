@@ -44,6 +44,19 @@ fn inside_list_item(ctx: &Context) -> bool {
         .any(|tag| matches!(tag.as_deref(), Some("li")))
 }
 
+fn list_item_continuation_width(ctx: &Context) -> Option<usize> {
+    inside_list_item(ctx).then(|| current_list_depth(ctx) * 2)
+}
+
+fn write_list_item_continuation_indent(ctx: &mut Context) {
+    if let Some(width) = list_item_continuation_width(ctx) {
+        ctx.output
+            .write_fmt(format_args!("{: <width$}", "", width = width))
+            // SAFETY: we are writing to a String
+            .unwrap();
+    }
+}
+
 #[allow(clippy::too_many_lines)]
 fn walk(node: &Handle, ctx: &mut Context) {
     match &node.data {
@@ -112,24 +125,27 @@ fn walk(node: &Handle, ctx: &mut Context) {
                         }
                     });
                     let parent_tag = tag_iter.next();
-                    let tag_level = tag_iter.count();
+                    let tag_level =
+                        list_item_continuation_width(ctx).map_or(0, |width| width.saturating_sub(2));
                     match parent_tag {
                         Some("ol") => {
                             ctx.output
-                                .write_fmt(format_args!("{: <width$}+ ", "", width = tag_level * 2))
+                                .write_fmt(format_args!("{: <width$}+ ", "", width = tag_level))
                                 // SAFETY: we are writing to a String
                                 .unwrap();
                         }
                         Some("ul" | "menu") | None => {
                             ctx.output
-                                .write_fmt(format_args!("{: <width$}- ", "", width = tag_level * 2))
+                                .write_fmt(format_args!("{: <width$}- ", "", width = tag_level))
                                 // SAFETY: we are writing to a String
                                 .unwrap();
                         }
                         _ => unreachable!(),
                     }
                     walk_descendants(node, ctx, Some(Box::from(tag_name)));
-                    ctx.output.push('\n');
+                    if !ctx.output.ends_with("\n\n") {
+                        ctx.output.push('\n');
+                    }
                 }
                 "ol" | "ul" | "menu" => {
                     ctx.output.push('\n');
@@ -152,7 +168,11 @@ fn walk(node: &Handle, ctx: &mut Context) {
                     }
                     // TODO: extra newline if not inside a list
                     walk_descendants(node, ctx, Some(Box::from(tag_name)));
-                    ctx.output.push_str("\n\n");
+                    if inside_list_item(ctx) {
+                        ctx.output.push('\n');
+                    } else {
+                        ctx.output.push_str("\n\n");
+                    }
                 }
                 "s" | "del" => {
                     let (leading_ws, trailing_ws) = inline_edge_whitespace(node);
@@ -224,21 +244,17 @@ fn walk(node: &Handle, ctx: &mut Context) {
                 }
                 "html" | "head" | "body" => walk_descendants(node, ctx, Some(Box::from(tag_name))),
                 "p" => {
+                    if list_item_continuation_width(ctx).is_some()
+                        && ctx.output.ends_with("\n\n")
+                    {
+                        write_list_item_continuation_indent(ctx);
+                    }
                     walk_descendants(node, ctx, Some(Box::from(tag_name)));
                     ctx.output.push_str("\n\n");
                 }
                 "br" => {
                     ctx.output.push_str("\\\n");
-                    if inside_list_item(ctx) {
-                        ctx.output
-                            .write_fmt(format_args!(
-                                "{: <width$}",
-                                "",
-                                width = current_list_depth(ctx) * 2
-                            ))
-                            // SAFETY: we are writing to a String
-                            .unwrap();
-                    }
+                    write_list_item_continuation_indent(ctx);
                 }
                 "a" => {
                     if let Some(href) = get_attr_value(&attrs.borrow(), "href") {
