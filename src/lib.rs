@@ -331,7 +331,7 @@ fn walk(node: &Handle, ctx: &mut Context) {
                     }
                 }
                 _ => {
-                    todo!()
+                    todo!("{tag_name}")
                 }
             }
         }
