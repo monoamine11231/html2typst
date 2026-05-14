@@ -206,6 +206,8 @@ fn walk(node: &Handle, ctx: &mut Context) {
                     ctx.output.push('*');
                     if trailing_ws {
                         ctx.output.push(' ');
+                    } else {
+                    	ctx.output.push('\\');
                     }
                 }
                 "i" | "em" => {
