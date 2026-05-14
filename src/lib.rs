@@ -110,6 +110,16 @@ fn walk(node: &Handle, ctx: &mut Context) {
                         ctx.output.push(' ');
                     }
                 }
+                "span" => {
+                    let (leading_ws, trailing_ws) = inline_edge_whitespace(node);
+                    if leading_ws {
+                        ctx.output.push(' ');
+                    }
+                    walk_descendants(node, ctx, Some(Box::from(tag_name)));
+                    if trailing_ws {
+                        ctx.output.push(' ');
+                    }
+                },
                 "div" | "section" | "header" | "footer" => {
                     ctx.output.push_str("\n\n");
                     walk_descendants(node, ctx, Some(Box::from(tag_name)));
