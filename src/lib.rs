@@ -73,7 +73,7 @@ fn walk(node: &Handle, ctx: &mut Context) {
             // - remove excess whitespace, newlines, and carriage returns
             let text = contents.borrow();
 
-            let escaped_text = escape_html(text.trim());
+            let escaped_text = escape_html(&text);
             ctx.output.push_str(&escaped_text);
         }
         NodeData::Element { name, attrs, .. } => {
